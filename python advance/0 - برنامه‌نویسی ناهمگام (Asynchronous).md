@@ -61,3 +61,71 @@ async def main():
 
 asyncio.run(main())
 ```
+
+### ۵. تفاوت `asyncio.sleep()` و `time.sleep()`
+
+- یک `time.sleep(n)` کل رشته اجرایی (Thread) و پردازنده را قفل می‌کند؛ هیچ کد دیگری در حلقه اجرا نمی‌شود.
+    
+-  دو `asyncio.sleep(n)` یک وقفه ناهمگام است؛ به Event Loop می‌گوید به مدت $n$ ثانیه به کارهای دیگر رسیدگی کند.
+    
+```python
+import asyncio
+import time
+
+async def worker_blocking(num):
+    print(f"شروع مسدودکننده {num}")
+    time.sleep(1)  # کل برنامه را ۱ ثانیه فریز می‌کند
+    print(f"پایان مسدودکننده {num}")
+
+async def worker_non_blocking(num):
+    print(f"شروع غیرمسدودکننده {num}")
+    await asyncio.sleep(1)  # کنترل را واگذار می‌کند
+    print(f"پایان غیرمسدودکننده {num}")
+```
+
+### ۶ و ۷. اجرای همزمان با `asyncio.gather()`
+
+اگر چند کوروتین را تک‌به‌تک `await` کنید، به صورت ترتیبی اجرا می‌شوند. برای اجرای موازی و همزمان آن‌ها روی همان یک رشته، از `asyncio.gather()` استفاده می‌شود.
+
+کد زیر مقایسه اجرای ترتیبی در برابر همزمان با `gather` را نشان می‌دهد:
+
+
+
+```Python
+import asyncio
+import time
+
+async def download_file(file_id, delay):
+    print(f"[شروع] دانلود فایل {file_id}...")
+    await asyncio.sleep(delay)  # شبیه‌سازی دانلود اینترنتی
+    print(f"[اتمام] دانلود فایل {file_id}!")
+    return f"محتوای فایل {file_id}"
+
+async def main():
+    start_time = time.time()
+
+    # ارسال همزمان سه کار به Event Loop
+    results = await asyncio.gather(
+        download_file("A", 2),
+        download_file("B", 3),
+        download_file("C", 1)
+    )
+
+    elapsed = time.time() - start_time
+    print(f"\nهمه دانلودها در {elapsed:.2f} ثانیه تمام شدند.")
+    print("خروجی‌ها:", results)
+
+asyncio.run(main())
+```
+
+**نحوه رفتار در خروجی:**
+
+1. هر ۳ دانلود بلافاصله شروع می‌شوند.
+    
+2. بعد از ۱ ثانیه، فایل C تمام می‌شود.
+    
+3. بعد از ۲ ثانیه، فایل A تمام می‌شود.
+    
+4. بعد از ۳ ثانیه، فایل B تمام می‌شود.
+    
+5. کل زمان اجرای برنامه به جای $1 + 2 + 3 = 6$ ثانیه، حدود **۳ ثانیه** (طولانی‌ترین تسک) خواهد بود.
