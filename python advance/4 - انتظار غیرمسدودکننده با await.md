@@ -90,3 +90,46 @@ await main()
 * یک شیء کوروتین (خروجی فراخوانی تابع `async def`)
 * یک شیء `asyncio.Task` (ساخته‌شده با `asyncio.create_task`)
 * یک شیء `asyncio.Future` (کارهای سطح پایین‌تر که هنوز کامل نشده‌اند)
+
+
+## مورد ۴: `asyncio.run()`
+
+### مفهوم
+
+ اینکه `asyncio.run()` یک event loop جدید می‌سازد. بعد تابع async شما را در آن loop اجرا می‌کند. وقتی آن تابع تمام شود، `asyncio.run()` loop را می‌بندد.
+
+این تابع معمولاً **نقطه شروع** برنامه async است. شما آن را فقط یک بار، در بیرون از توابع async، صدا می‌زنید.
+
+### کد
+
+```python
+import asyncio
+
+async def main():
+    print("Inside main")
+    await asyncio.sleep(1)
+    print("main finished")
+
+asyncio.run(main())
+print("Program finished")
+```
+
+### خروجی
+
+```
+Inside main
+main finished
+Program finished
+```
+
+### اجرا چطور پیش می‌رود
+
+1. `asyncio.run(main())` یک event loop می‌سازد.
+2. `main()` را در آن loop اجرا می‌کند.
+3. `main()` به `await asyncio.sleep(1)` می‌رسد و یک ثانیه صبر می‌کند.
+4. `main()` تمام می‌شود. `asyncio.run()` loop را می‌بندد.
+5. خط آخر، `Program finished`، چاپ می‌شود.
+
+### نکته مهم
+
+نمی‌توانید `await main()` را مستقیم در سطح اصلی فایل بنویسید. `await` فقط داخل تابع `async def` کار می‌کند. برای همین از `asyncio.run()` استفاده می‌کنیم.
